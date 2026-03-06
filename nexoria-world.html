@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXORIA — CLASSIFIED DOSSIER</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Share+Tech+Mono&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --jade: #00FFB2;
+    --red: #FF2E4C;
+    --gold: #FFD166;
+    --deep: #020A0F;
+    --panel: #040E14;
+    --border: rgba(0,255,178,0.2);
+    --dim: rgba(0,255,178,0.06);
+    --text: #C8EAE0;
+    --muted: #4A7A6D;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--deep);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,255,178,0.015) 2px,
+      rgba(0,255,178,0.015) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* Noise texture */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9998;
+    opacity: 0.3;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 30px;
+  }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    animation: fadeDown 0.8s ease forwards;
+  }
+
+  .stamp-classified {
+    border: 3px solid var(--red);
+    color: var(--red);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 6px;
+    padding: 6px 14px;
+    opacity: 0.85;
+    transform: rotate(-2deg);
+    animation: pulse-red 3s infinite;
+  }
+
+  @keyframes pulse-red {
+    0%, 100% { box-shadow: 0 0 8px rgba(255,46,76,0.4); }
+    50% { box-shadow: 0 0 20px rgba(255,46,76,0.8); }
+  }
+
+  .header-right {
+    text-align: right;
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+
+  .title-block {
+    text-align: center;
+    margin-bottom: 48px;
+    animation: fadeDown 1s 0.2s ease both;
+  }
+
+  .chinese-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    color: var(--muted);
+    letter-spacing: 8px;
+    margin-bottom: 8px;
+  }
+
+  .main-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(64px, 10vw, 120px);
+    color: var(--jade);
+    letter-spacing: 20px;
+    line-height: 1;
+    text-shadow: 0 0 40px rgba(0,255,178,0.4), 0 0 80px rgba(0,255,178,0.15);
+    animation: flicker 8s infinite;
+  }
+
+  @keyframes flicker {
+    0%,94%,96%,98%,100% { opacity: 1; }
+    95%,97%,99% { opacity: 0.85; }
+  }
+
+  .subtitle {
+    font-size: 11px;
+    letter-spacing: 5px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--jade), var(--gold), var(--jade), transparent);
+    margin: 10px 0 40px;
+    opacity: 0.4;
+  }
+
+  /* MAP SECTION */
+  .map-section {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+    margin-bottom: 32px;
+    animation: fadeUp 1s 0.4s ease both;
+  }
+
+  .map-wrapper {
+    position: relative;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .map-label {
+    position: absolute;
+    top: 12px;
+    left: 16px;
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    z-index: 10;
+  }
+
+  .map-coord {
+    position: absolute;
+    bottom: 12px;
+    right: 16px;
+    font-size: 9px;
+    color: var(--muted);
+    z-index: 10;
+  }
+
+  svg.world-map {
+    width: 100%;
+    height: 500px;
+    display: block;
+  }
+
+  /* Animated grid lines on map */
+  .grid-line {
+    stroke: rgba(0,255,178,0.08);
+    stroke-width: 0.5;
+  }
+
+  .region {
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .region:hover {
+    filter: brightness(1.5);
+  }
+
+  .region-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    fill: rgba(0,255,178,0.7);
+    pointer-events: none;
+  }
+
+  .region-label-cn {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 7px;
+    fill: rgba(255,209,102,0.5);
+    pointer-events: none;
+  }
+
+  .city-dot {
+    animation: city-pulse 2s infinite;
+  }
+
+  @keyframes city-pulse {
+    0%, 100% { r: 4; opacity: 1; }
+    50% { r: 6; opacity: 0.7; }
+  }
+
+  .city-dot-capital {
+    animation: capital-pulse 1.5s infinite;
+  }
+
+  @keyframes capital-pulse {
+    0%, 100% { r: 6; opacity: 1; }
+    50% { r: 9; opacity: 0.6; }
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 18px;
+    position: relative;
+    animation: fadeUp 1s ease both;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--jade);
+    opacity: 0.6;
+  }
+
+  .panel.red::before { background: var(--red); }
+  .panel.gold::before { background: var(--gold); }
+
+  .panel-title {
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(0,255,178,0.05);
+    padding-bottom: 8px;
+  }
+
+  .stat-row:last-child { border-bottom: none; margin-bottom: 0; }
+
+  .stat-label {
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .stat-value {
+    font-size: 13px;
+    color: var(--jade);
+    font-weight: bold;
+  }
+
+  .stat-value.red { color: var(--red); }
+  .stat-value.gold { color: var(--gold); }
+
+  /* BOTTOM GRID */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+    animation: fadeUp 1s 0.6s ease both;
+  }
+
+  .info-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 20px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .info-card::after {
+    content: attr(data-num);
+    position: absolute;
+    bottom: -10px;
+    right: -5px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 80px;
+    color: rgba(0,255,178,0.04);
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .card-icon {
+    font-size: 22px;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .card-title {
+    font-size: 8px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .card-main {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: var(--jade);
+    line-height: 1;
+    text-shadow: 0 0 20px rgba(0,255,178,0.3);
+  }
+
+  .card-sub {
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+
+  /* ENERGY BAR */
+  .energy-section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 24px;
+    margin-bottom: 32px;
+    animation: fadeUp 1s 0.8s ease both;
+  }
+
+  .energy-title {
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  .energy-bars {
+    display: grid;
+    gap: 14px;
+  }
+
+  .bar-row {
+    display: grid;
+    grid-template-columns: 180px 1fr 60px;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .bar-label {
+    font-size: 10px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .bar-track {
+    height: 6px;
+    background: rgba(255,255,255,0.05);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    position: relative;
+    animation: bar-grow 2s ease both;
+  }
+
+  @keyframes bar-grow {
+    from { width: 0 !important; }
+  }
+
+  .bar-fill.jade { background: linear-gradient(90deg, rgba(0,255,178,0.4), var(--jade)); box-shadow: 0 0 8px rgba(0,255,178,0.4); }
+  .bar-fill.gold { background: linear-gradient(90deg, rgba(255,209,102,0.4), var(--gold)); box-shadow: 0 0 8px rgba(255,209,102,0.4); }
+  .bar-fill.red { background: linear-gradient(90deg, rgba(255,46,76,0.4), var(--red)); box-shadow: 0 0 8px rgba(255,46,76,0.4); }
+  .bar-fill.teal { background: linear-gradient(90deg, rgba(0,200,255,0.4), #00C8FF); box-shadow: 0 0 8px rgba(0,200,255,0.4); }
+
+  .bar-pct {
+    font-size: 11px;
+    color: var(--jade);
+    text-align: right;
+  }
+
+  /* THREAT MATRIX */
+  .bottom-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 32px;
+    animation: fadeUp 1s 1s ease both;
+  }
+
+  .timeline {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 24px;
+  }
+
+  .tl-item {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+    position: relative;
+  }
+
+  .tl-item::before {
+    content: '';
+    position: absolute;
+    left: 78px;
+    top: 20px;
+    bottom: -16px;
+    width: 1px;
+    background: var(--border);
+  }
+
+  .tl-item:last-child::before { display: none; }
+
+  .tl-year {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: var(--gold);
+    line-height: 1.2;
+  }
+
+  .tl-event {
+    font-size: 10px;
+    color: var(--text);
+    line-height: 1.6;
+    padding-top: 2px;
+  }
+
+  .tl-dot {
+    position: absolute;
+    left: 73px;
+    top: 6px;
+    width: 10px;
+    height: 10px;
+    border: 1px solid var(--jade);
+    background: var(--jade);
+    box-shadow: 0 0 8px var(--jade);
+  }
+
+  /* THREAT LEVEL */
+  .threat-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 24px;
+  }
+
+  .threat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .threat-item {
+    background: rgba(0,255,178,0.03);
+    border: 1px solid var(--border);
+    padding: 14px;
+    text-align: center;
+  }
+
+  .threat-item.danger {
+    border-color: rgba(255,46,76,0.3);
+    background: rgba(255,46,76,0.05);
+  }
+
+  .threat-item.warning {
+    border-color: rgba(255,209,102,0.3);
+    background: rgba(255,209,102,0.05);
+  }
+
+  .threat-name {
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .threat-level {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--jade);
+  }
+
+  .threat-item.danger .threat-level { color: var(--red); }
+  .threat-item.warning .threat-level { color: var(--gold); }
+
+  /* FOOTER */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 9px;
+    color: var(--muted);
+    animation: fadeUp 1s 1.2s ease both;
+  }
+
+  .footer-cn {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 11px;
+    color: rgba(255,209,102,0.4);
+  }
+
+  /* Scroll animation */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Corner decorations */
+  .corner-tl, .corner-br {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    z-index: 5;
+  }
+
+  .corner-tl {
+    top: 0; left: 0;
+    border-top: 2px solid var(--jade);
+    border-left: 2px solid var(--jade);
+    opacity: 0.6;
+  }
+
+  .corner-br {
+    bottom: 0; right: 0;
+    border-bottom: 2px solid var(--jade);
+    border-right: 2px solid var(--jade);
+    opacity: 0.6;
+  }
+
+  .tooltip {
+    position: fixed;
+    background: rgba(4,14,20,0.95);
+    border: 1px solid var(--jade);
+    padding: 10px 14px;
+    font-size: 10px;
+    color: var(--text);
+    pointer-events: none;
+    z-index: 1000;
+    display: none;
+    max-width: 220px;
+    line-height: 1.7;
+  }
+
+  .tooltip-title {
+    font-size: 12px;
+    color: var(--jade);
+    margin-bottom: 4px;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 2px;
+  }
+
+  .scan-line {
+    position: absolute;
+    left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0,255,178,0.3), transparent);
+    animation: scan 4s linear infinite;
+    pointer-events: none;
+    z-index: 8;
+  }
+
+  @keyframes scan {
+    from { top: 0; }
+    to { top: 100%; }
+  }
+
+  /* Responsive */
+  @media (max-width: 1000px) {
+    .map-section { grid-template-columns: 1fr; }
+    .bottom-grid { grid-template-columns: repeat(2, 1fr); }
+    .bottom-pair { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <div class="stamp-classified">⬛ CLASSIFIED — XENOINTELLIGENCE DOSSIER</div>
+    </div>
+    <div class="header-right">
+      DOCUMENT ID: NXR-7741-ALPHA<br>
+      ISSUED: CYCLE 3847.22<br>
+      CLEARANCE: TIER OMEGA<br>
+      TRANSLATION: AUTO-RENDERED
+    </div>
+  </div>
+
+  <!-- TITLE -->
+  <div class="title-block">
+    <div class="chinese-title">奈索利亚 · 帝国星球 · 机密文件</div>
+    <div class="main-title">NEXORIA</div>
+    <div class="subtitle">PLANETARY INTELLIGENCE OVERVIEW — FOR ARRIVING ENTITIES</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- MAP + SIDEBAR -->
+  <div class="map-section">
+
+    <div class="map-wrapper" style="position:relative;">
+      <div class="corner-tl"></div>
+      <div class="corner-br"></div>
+      <div class="scan-line"></div>
+      <div class="map-label">SURFACE CARTOGRAPHY // NEXORIA-PRIME // SCALE 1:44,000,000</div>
+      <div class="map-coord">ΩNX-0.0 // 27.4°G-STANDARD</div>
+
+      <svg class="world-map" viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg">
+        <!-- Ocean background -->
+        <defs>
+          <radialGradient id="oceanGrad" cx="50%" cy="50%" r="60%">
+            <stop offset="0%" stop-color="#041220"/>
+            <stop offset="100%" stop-color="#020A0F"/>
+          </radialGradient>
+          <radialGradient id="glowCapital" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="rgba(0,255,178,0.3)"/>
+            <stop offset="100%" stop-color="rgba(0,255,178,0)"/>
+          </radialGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <rect width="900" height="500" fill="url(#oceanGrad)"/>
+
+        <!-- Grid lines -->
+        <line x1="0" y1="100" x2="900" y2="100" class="grid-line"/>
+        <line x1="0" y1="200" x2="900" y2="200" class="grid-line"/>
+        <line x1="0" y1="300" x2="900" y2="300" class="grid-line"/>
+        <line x1="0" y1="400" x2="900" y2="400" class="grid-line"/>
+        <line x1="150" y1="0" x2="150" y2="500" class="grid-line"/>
+        <line x1="300" y1="0" x2="300" y2="500" class="grid-line"/>
+        <line x1="450" y1="0" x2="450" y2="500" class="grid-line"/>
+        <line x1="600" y1="0" x2="600" y2="500" class="grid-line"/>
+        <line x1="750" y1="0" x2="750" y2="500" class="grid-line"/>
+
+        <!-- === NEXORIA SUPERCONTINENT (main) === -->
+        <!-- Mega-continent: roughly 2.2x USSR size -->
+        <path class="region" data-region="nexoria-main"
+          d="M 80 110 L 130 80 L 220 70 L 340 65 L 480 60 L 600 75 L 680 90 L 720 120 
+             L 740 160 L 730 210 L 700 250 L 680 290 L 660 320 L 620 350 
+             L 560 370 L 480 380 L 400 385 L 320 375 L 240 360 L 170 330 
+             L 120 290 L 90 250 L 70 200 L 70 155 Z"
+          fill="rgba(0,255,178,0.07)" stroke="rgba(0,255,178,0.35)" stroke-width="1.5"/>
+
+        <!-- Sub-region: XIAN CORRIDOR (industrial heart) -->
+        <path class="region" data-region="xian"
+          d="M 280 140 L 420 130 L 480 150 L 490 200 L 460 240 L 390 260 L 300 255 L 250 230 L 240 185 Z"
+          fill="rgba(0,255,178,0.12)" stroke="rgba(0,255,178,0.5)" stroke-width="1"
+          onclick="showTooltip(event, 'XIAN CORRIDOR', '最高工业中心\nThe industrial heart of Nexoria. 47% of all energy production. Population: 4.2B. Atmospheric processors visible from orbit.')"/>
+
+        <!-- Sub-region: ZHONG HIGHLANDS -->
+        <path class="region" data-region="zhong"
+          d="M 480 60 L 600 75 L 650 100 L 660 160 L 620 200 L 570 210 L 510 200 L 490 150 L 480 130 Z"
+          fill="rgba(255,209,102,0.08)" stroke="rgba(255,209,102,0.35)" stroke-width="1"
+          onclick="showTooltip(event, 'ZHONG HIGHLANDS', '中岭高地\nForested highlands. Biome preservation zone. Access strictly controlled. Rumored quantum research facilities buried 3km underground.')"/>
+
+        <!-- Sub-region: DELTA BASIN -->
+        <path class="region" data-region="delta"
+          d="M 150 270 L 240 250 L 300 255 L 320 310 L 290 350 L 240 360 L 170 330 L 140 300 Z"
+          fill="rgba(0,200,255,0.08)" stroke="rgba(0,200,255,0.3)" stroke-width="1"
+          onclick="showTooltip(event, 'DELTA BASIN', '三角洲平原\nFertile agricultural delta. Zero-waste farming megacomplexes. Feeds 60% of the population. Protected by atmospheric dome systems.')"/>
+
+        <!-- Sub-region: VOID WASTES (restricted) -->
+        <path class="region" data-region="void"
+          d="M 550 280 L 620 270 L 670 290 L 680 340 L 640 370 L 570 365 L 540 330 Z"
+          fill="rgba(255,46,76,0.06)" stroke="rgba(255,46,76,0.3)" stroke-width="1" stroke-dasharray="4,3"
+          onclick="showTooltip(event, 'VOID WASTES', '禁区 — FORBIDDEN\nRadiation exclusion zone. Pre-collapse testing grounds. Entry unauthorized. Anomalous gravitational readings detected. DO NOT APPROACH.')"/>
+
+        <!-- Sub-region: NORTHERN TUNDRA BELT -->
+        <path class="region" data-region="tundra"
+          d="M 130 80 L 280 70 L 280 140 L 240 150 L 170 140 L 110 120 Z"
+          fill="rgba(0,200,255,0.05)" stroke="rgba(0,200,255,0.2)" stroke-width="0.8"
+          onclick="showTooltip(event, 'POLAR RIDGE', '极地岭带\nPermanently glaciated. Geothermal tap arrays harvest 18% of national energy. No permanent settlements. Military scanner arrays.')"/>
+
+        <!-- Secondary continent: ISLE OF WEI -->
+        <path class="region" data-region="wei"
+          d="M 800 180 L 850 170 L 880 200 L 875 240 L 840 260 L 800 250 L 785 220 Z"
+          fill="rgba(255,209,102,0.1)" stroke="rgba(255,209,102,0.4)" stroke-width="1"
+          onclick="showTooltip(event, 'ISLE OF WEI', '威岛\nSovereign research archipelago. Headquarters of NEXORIA QUANTUM COUNCIL. Autonomous governance. Where new arrivals are processed.')"/>
+
+        <!-- Tertiary: DEEP OCEAN PLATFORM -->
+        <path class="region" data-region="platform"
+          d="M 780 350 L 820 340 L 845 360 L 830 385 L 795 388 L 775 370 Z"
+          fill="rgba(0,255,178,0.05)" stroke="rgba(0,255,178,0.2)" stroke-width="0.8"
+          onclick="showTooltip(event, 'OCEAN PLATFORM ZR-9', '海洋站ZR-9\nDeep ocean energy harvest station. Tidal + thermal. Self-sustaining. Accessible only by submersible.')"/>
+
+        <!-- Capital city glow -->
+        <circle cx="380" cy="190" r="25" fill="url(#glowCapital)" opacity="0.6"/>
+        <circle cx="380" cy="190" r="8" fill="rgba(0,255,178,0.15)" stroke="rgba(0,255,178,0.6)" stroke-width="1"/>
+        <circle class="city-dot-capital" cx="380" cy="190" r="6" fill="var(--jade)" filter="url(#glow)"
+          onclick="showTooltip(event, 'CAPITAL: LONGHUA PRIME', '龙华首都\nPopulation: 980M. Megacity spanning 2,400 km². Floating tier-districts rise 8km above ground. Zero atmospheric waste since Cycle 3200.')"/>
+
+        <!-- City nodes -->
+        <circle class="city-dot" cx="290" cy="170" r="4" fill="rgba(0,255,178,0.8)" stroke="var(--jade)" stroke-width="1"
+          onclick="showTooltip(event, 'CHENLIANG', '晨亮市\nManufacturing megaplex. Pop: 340M')"/>
+        <circle class="city-dot" cx="460" cy="175" r="4" fill="rgba(0,255,178,0.8)" stroke="var(--jade)" stroke-width="1"
+          onclick="showTooltip(event, 'XIANTU PORT', '先途港\nPrimary spaceport. Alien arrival processing hub')"/>
+        <circle class="city-dot" cx="550" cy="160" r="3" fill="rgba(255,209,102,0.8)" stroke="var(--gold)" stroke-width="1"
+          onclick="showTooltip(event, 'WEISHAN ARCHIVE', '威山典藏\nCentral data archive. Contains full planetary history')"/>
+        <circle class="city-dot" cx="320" cy="300" r="3" fill="rgba(0,200,255,0.8)" stroke="#00C8FF" stroke-width="1"
+          onclick="showTooltip(event, 'DELTA STATION 1', '三角洲一号\nAgricultural command hub. Pop: 180M')"/>
+        <circle class="city-dot" cx="610" cy="130" r="3" fill="rgba(255,209,102,0.8)" stroke="var(--gold)" stroke-width="1"
+          onclick="showTooltip(event, 'QINGYUN CITADEL', '青云城\nMilitary command center. Restricted')"/>
+        <circle class="city-dot" cx="820" cy="215" r="4" fill="rgba(255,209,102,0.9)" stroke="var(--gold)" stroke-width="1.5"
+          onclick="showTooltip(event, 'WEI COUNCIL SEAT', '威议会\nQuantum Council Headquarters. Alien diplomacy center')"/>
+        <circle class="city-dot" cx="430" cy="300" r="3" fill="rgba(0,255,178,0.6)" stroke="var(--jade)" stroke-width="1"
+          onclick="showTooltip(event, 'HUANENG GRID', '环能网\nPrimary energy distribution hub')"/>
+
+        <!-- Connection lines (energy grid) -->
+        <line x1="380" y1="190" x2="290" y2="170" stroke="rgba(0,255,178,0.15)" stroke-width="0.8" stroke-dasharray="3,3"/>
+        <line x1="380" y1="190" x2="460" y2="175" stroke="rgba(0,255,178,0.15)" stroke-width="0.8" stroke-dasharray="3,3"/>
+        <line x1="380" y1="190" x2="320" y2="300" stroke="rgba(0,255,178,0.15)" stroke-width="0.8" stroke-dasharray="3,3"/>
+        <line x1="380" y1="190" x2="430" y2="300" stroke="rgba(0,255,178,0.15)" stroke-width="0.8" stroke-dasharray="3,3"/>
+        <line x1="460" y1="175" x2="550" y2="160" stroke="rgba(255,209,102,0.1)" stroke-width="0.8" stroke-dasharray="3,3"/>
+        <line x1="460" y1="175" x2="820" y2="215" stroke="rgba(255,209,102,0.1)" stroke-width="0.8" stroke-dasharray="5,4"/>
+
+        <!-- Region labels -->
+        <text x="330" y="200" class="region-label" text-anchor="middle">XIAN CORRIDOR</text>
+        <text x="330" y="210" class="region-label-cn" text-anchor="middle">最高工业中心</text>
+        <text x="570" y="140" class="region-label" text-anchor="middle" font-size="7">ZHONG HIGHLANDS</text>
+        <text x="230" y="305" class="region-label" text-anchor="middle" font-size="7">DELTA BASIN</text>
+        <text x="610" y="320" class="region-label" fill="rgba(255,46,76,0.6)" text-anchor="middle" font-size="7">⚠ VOID WASTES</text>
+        <text x="820" y="215" class="region-label" fill="rgba(255,209,102,0.7)" text-anchor="middle" font-size="7">ISLE OF WEI</text>
+
+        <!-- Capital label -->
+        <text x="380" y="176" class="region-label" text-anchor="middle" font-size="11" fill="rgba(0,255,178,0.9)">★ LONGHUA PRIME</text>
+        <text x="380" y="167" class="region-label-cn" text-anchor="middle" font-size="8">龙华首都</text>
+
+        <!-- Legend -->
+        <rect x="20" y="430" width="8" height="8" fill="rgba(0,255,178,0.5)"/>
+        <text x="34" y="439" class="region-label" font-size="8">MAJOR CITY</text>
+        <rect x="110" y="430" width="8" height="8" fill="rgba(255,209,102,0.5)"/>
+        <text x="124" y="439" class="region-label" font-size="8" fill="rgba(255,209,102,0.7)">RESTRICTED</text>
+        <rect x="210" y="430" width="8" height="8" fill="rgba(255,46,76,0.4)" stroke="rgba(255,46,76,0.5)" stroke-width="1"/>
+        <text x="224" y="439" class="region-label" font-size="8" fill="rgba(255,46,76,0.7)">FORBIDDEN ZONE</text>
+
+        <!-- Scale bar -->
+        <line x1="700" y1="460" x2="850" y2="460" stroke="rgba(0,255,178,0.4)" stroke-width="1"/>
+        <line x1="700" y1="455" x2="700" y2="465" stroke="rgba(0,255,178,0.4)" stroke-width="1"/>
+        <line x1="850" y1="455" x2="850" y2="465" stroke="rgba(0,255,178,0.4)" stroke-width="1"/>
+        <text x="775" y="475" class="region-label" text-anchor="middle" font-size="7">≈ 8,000 KM</text>
+      </svg>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+
+      <div class="panel" style="animation-delay:0.5s">
+        <div class="panel-title">PLANETARY DATA</div>
+        <div class="stat-row">
+          <span class="stat-label">Planet Size</span>
+          <span class="stat-value">7.2× Earth</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Surface Gravity</span>
+          <span class="stat-value gold">8.4 m/s² <span style="font-size:9px;color:var(--muted)">(0.86g)</span></span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Atmosphere</span>
+          <span class="stat-value">O₂ 21.3% // N 77.1%</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Day Cycle</span>
+          <span class="stat-value">31.4 hrs</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Magnetic Field</span>
+          <span class="stat-value gold">4.2× Earth</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Avg Temperature</span>
+          <span class="stat-value">14–29°C</span>
+        </div>
+      </div>
+
+      <div class="panel red" style="animation-delay:0.6s">
+        <div class="panel-title">POWER METRICS</div>
+        <div class="stat-row">
+          <span class="stat-label">Global Population</span>
+          <span class="stat-value red">28.4 BILLION</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Military Index</span>
+          <span class="stat-value red">TIER OMEGA</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">GDP (galactic std)</span>
+          <span class="stat-value">⊕ 847 TU</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Tech Level</span>
+          <span class="stat-value red">K-TYPE 2.7</span>
+        </div>
+      </div>
+
+      <div class="panel gold" style="animation-delay:0.7s">
+        <div class="panel-title">GOVERNANCE</div>
+        <div class="stat-row">
+          <span class="stat-label">System</span>
+          <span class="stat-value gold">TECHNOCRATIC EMPIRE</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Ruling Body</span>
+          <span class="stat-value">QUANTUM COUNCIL</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Provinces</span>
+          <span class="stat-value gold">144 SECTORS</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Alien Policy</span>
+          <span class="stat-value red">WATCHFUL</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- STATS GRID -->
+  <div class="bottom-grid">
+
+    <div class="info-card" data-num="01">
+      <span class="card-icon">⚡</span>
+      <div class="card-title">ENERGY SELF-SUFFICIENCY</div>
+      <div class="card-main">100%</div>
+      <div class="card-sub">Zero fossil imports since<br>Cycle 2890. Net exporter.</div>
+    </div>
+
+    <div class="info-card" data-num="02">
+      <span class="card-icon">🌱</span>
+      <div class="card-title">WASTE OUTPUT</div>
+      <div class="card-main">0.03%</div>
+      <div class="card-sub">Of total material flow.<br>97% closed-loop recycling.</div>
+    </div>
+
+    <div class="info-card" data-num="03">
+      <span class="card-icon">🛡</span>
+      <div class="card-title">MILITARY CAPABILITY</div>
+      <div class="card-main">CLASS-Ω</div>
+      <div class="card-sub">Planetary shield grid active.<br>Orbital defense: always on.</div>
+    </div>
+
+    <div class="info-card" data-num="04">
+      <span class="card-icon">🌐</span>
+      <div class="card-title">TERRITORY (vs USSR)</div>
+      <div class="card-main">2.2×</div>
+      <div class="card-sub">48.2 million km² landmass.<br>USSR: 22.4M km² (Earth ref)</div>
+    </div>
+
+  </div>
+
+  <!-- ENERGY BREAKDOWN -->
+  <div class="energy-section">
+    <div class="energy-title">⚡ ENERGY SOURCE MATRIX — NEXORIA PRIME (% TOTAL GENERATION)</div>
+    <div class="energy-bars">
+
+      <div class="bar-row">
+        <div class="bar-label">☀ ORBITAL SOLAR ARRAY</div>
+        <div class="bar-track"><div class="bar-fill jade" style="width:42%"></div></div>
+        <div class="bar-pct">42%</div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-label">🌊 DEEP TIDAL HARVEST</div>
+        <div class="bar-track"><div class="bar-fill teal" style="width:22%"></div></div>
+        <div class="bar-pct">22%</div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-label">🌋 GEOTHERMAL GRID</div>
+        <div class="bar-track"><div class="bar-fill gold" style="width:18%"></div></div>
+        <div class="bar-pct">18%</div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-label">💨 ATMOSPHERIC WIND</div>
+        <div class="bar-track"><div class="bar-fill jade" style="width:11%"></div></div>
+        <div class="bar-pct">11%</div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-label">⚛ QUANTUM FUSION</div>
+        <div class="bar-track"><div class="bar-fill red" style="width:7%"></div></div>
+        <div class="bar-pct">7%</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TIMELINE + THREAT -->
+  <div class="bottom-pair">
+
+    <div class="timeline">
+      <div class="panel-title">HISTORICAL TIMELINE</div>
+
+      <div class="tl-item">
+        <div class="tl-year">2140</div>
+        <div class="tl-dot"></div>
+        <div class="tl-event">THE GREAT CONSOLIDATION: 47 warring nation-states unified under the Quantum Council following the Jade Accord. Modern Nexoria begins.</div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-year">2890</div>
+        <div class="tl-dot"></div>
+        <div class="tl-event">FOSSIL ZERO DAY: Last combustion facility deactivated. Orbital solar grid fully operational. Global energy independence achieved.</div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-year">3200</div>
+        <div class="tl-dot"></div>
+        <div class="tl-event">ZERO-WASTE PROTOCOL enacted. Atmospheric processors installed in all 144 sectors. Air quality index: PRISTINE.</div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-year">3710</div>
+        <div class="tl-dot"></div>
+        <div class="tl-event">FIRST ALIEN CONTACT. Arrival of Veth'kai delegation at Xiantu Port. Diplomatic protocols established. Watchful period begins.</div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-year">3847</div>
+        <div class="tl-dot" style="background:var(--red);border-color:var(--red);box-shadow:0 0 8px var(--red)"></div>
+        <div class="tl-event" style="color:rgba(255,46,76,0.9)">PRESENT CYCLE. Unknown vessel detected in sector 7. Classification: UNREGISTERED. Status: THIS DOCUMENT WAS PREPARED FOR YOUR ARRIVAL.</div>
+      </div>
+
+    </div>
+
+    <div class="threat-panel">
+      <div class="panel-title">ARRIVAL THREAT ASSESSMENT</div>
+      <div style="font-size:10px;color:var(--muted);line-height:1.7;margin-bottom:16px;">
+        This dossier was auto-compiled by NEXORIA INTELLIGENCE BUREAU upon detection of your vessel entering the outer grid. Your current status is being monitored.
+      </div>
+
+      <div class="threat-grid">
+        <div class="threat-item">
+          <div class="threat-name">MILITARY RESPONSE</div>
+          <div class="threat-level">STANDBY</div>
+        </div>
+        <div class="threat-item warning">
+          <div class="threat-name">SURVEILLANCE</div>
+          <div class="threat-level">ACTIVE</div>
+        </div>
+        <div class="threat-item warning">
+          <div class="threat-name">DIPLOMATIC STATUS</div>
+          <div class="threat-level">UNKNOWN</div>
+        </div>
+        <div class="threat-item danger">
+          <div class="threat-name">VOID WASTES ACCESS</div>
+          <div class="threat-level">FORBIDDEN</div>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;padding:14px;border:1px solid rgba(255,209,102,0.2);background:rgba(255,209,102,0.03);">
+        <div style="font-size:8px;letter-spacing:3px;color:rgba(255,209,102,0.6);margin-bottom:8px;">DIRECTIVE TO NEW ARRIVALS</div>
+        <div style="font-size:10px;color:var(--text);line-height:1.7;">Proceed immediately to XIANTU PORT (marked ◈ on map). Do not deviate. Do not attempt communication with civilian population. A Council envoy will meet you.</div>
+        <div style="font-size:9px;color:rgba(255,209,102,0.5);margin-top:8px;font-family:'Noto Serif SC',serif;">请立即前往先途港。勿偏离航线。</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div>NXR-7741-ALPHA // QUANTUM COUNCIL INTELLIGENCE BUREAU // CYCLE 3847.22</div>
+    <div class="footer-cn">奈索利亚量子议会 · 情报局 · 机密文件</div>
+    <div>ALL REGIONS INTERACTIVE — CLICK TO EXPLORE</div>
+  </div>
+
+</div>
+
+<!-- TOOLTIP -->
+<div class="tooltip" id="tooltip">
+  <div class="tooltip-title" id="tt-title"></div>
+  <div id="tt-body"></div>
+</div>
+
+<script>
+  const tooltip = document.getElementById('tooltip');
+  const ttTitle = document.getElementById('tt-title');
+  const ttBody = document.getElementById('tt-body');
+
+  function showTooltip(e, title, body) {
+    ttTitle.textContent = title;
+    ttBody.innerHTML = body.replace(/\n/g, '<br>');
+    tooltip.style.display = 'block';
+    moveTooltip(e);
+    e.stopPropagation();
+  }
+
+  function moveTooltip(e) {
+    let x = e.clientX + 16;
+    let y = e.clientY + 16;
+    if (x + 240 > window.innerWidth) x = e.clientX - 240;
+    if (y + 120 > window.innerHeight) y = e.clientY - 120;
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+  }
+
+  document.addEventListener('mousemove', moveTooltip);
+  document.addEventListener('click', () => { tooltip.style.display = 'none'; });
+
+  // Animate bars on load
+  document.querySelectorAll('.bar-fill').forEach((bar, i) => {
+    bar.style.animationDelay = (0.8 + i * 0.15) + 's';
+  });
+</script>
+
+</body>
+</html>
