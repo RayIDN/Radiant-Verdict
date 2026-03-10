@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Radiant Verdict — Segera Hadir</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;600;900&family=EB+Garamond:ital@1&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --gold: #c9a84c;
+      --gold-light: #f0d080;
+      --gold-dim: #7a5e28;
+      --ivory: #f5eed8;
+      --ink: #0a0806;
+      --deep: #12100d;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--ink);
+      overflow: hidden;
+      font-family: 'Cormorant Garamond', serif;
+      color: var(--ivory);
+    }
+
+    /* ── Grain overlay ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      opacity: 0.04;
+      pointer-events: none;
+    }
+
+    /* ── Radial glow ── */
+    .glow {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 700px; height: 700px;
+      background: radial-gradient(ellipse at center, rgba(201,168,76,0.12) 0%, transparent 70%);
+      animation: pulse 6s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+      50%       { opacity: 1;   transform: translate(-50%, -50%) scale(1.12); }
+    }
+
+    /* ── Horizontal rule lines ── */
+    .line-top, .line-bottom {
+      position: fixed; left: 6vw; right: 6vw;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--gold-dim), transparent);
+      z-index: 1;
+      opacity: 0;
+      animation: fadeIn 1.5s ease forwards;
+    }
+    .line-top    { top: 10vh;    animation-delay: 0.4s; }
+    .line-bottom { bottom: 10vh; animation-delay: 0.6s; }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    /* ── Corner accents ── */
+    .corner {
+      position: fixed;
+      width: 40px; height: 40px;
+      z-index: 1;
+      opacity: 0;
+      animation: fadeIn 1.5s ease 0.8s forwards;
+    }
+    .corner::before, .corner::after {
+      content: '';
+      position: absolute;
+      background: var(--gold-dim);
+    }
+    .corner::before { width: 100%; height: 1px; top: 0; left: 0; }
+    .corner::after  { width: 1px; height: 100%; top: 0; left: 0; }
+
+    .corner.tl { top: 8vh;    left: 5vw; }
+    .corner.tr { top: 8vh;    right: 5vw; transform: scaleX(-1); }
+    .corner.bl { bottom: 8vh; left: 5vw;  transform: scaleY(-1); }
+    .corner.br { bottom: 8vh; right: 5vw; transform: scale(-1,-1); }
+
+    /* ── Main stage ── */
+    .stage {
+      position: relative; z-index: 2;
+      width: 100%; height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      padding: 14vh 8vw;
+    }
+
+    /* ── Eyebrow ── */
+    .eyebrow {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(0.55rem, 1.2vw, 0.75rem);
+      letter-spacing: 0.45em;
+      color: var(--gold);
+      text-transform: uppercase;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: rise 1.2s cubic-bezier(0.22,1,0.36,1) 0.3s forwards;
+      margin-bottom: 2.8vh;
+    }
+
+    /* ── Title ── */
+    .title-wrap {
+      position: relative;
+      text-align: center;
+      overflow: visible;
+      margin-bottom: 1.6vh;
+    }
+
+    .title {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(3rem, 9vw, 8rem);
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      line-height: 1;
+      color: transparent;
+      background: linear-gradient(160deg, var(--gold-light) 0%, var(--gold) 40%, var(--gold-dim) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      opacity: 0;
+      transform: translateY(28px);
+      animation: rise 1.4s cubic-bezier(0.22,1,0.36,1) 0.6s forwards;
+    }
+
+    /* shimmer sweep */
+    .title::after {
+      content: attr(data-text);
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(100deg, transparent 30%, rgba(255,255,230,0.55) 50%, transparent 70%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      background-size: 200% 100%;
+      background-position: -100% 0;
+      animation: shimmer 4s ease 2.2s infinite;
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: -100% 0; }
+      40%  { background-position: 200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    /* ── Subtitle / tagline ── */
+    .subtitle {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(1rem, 2.4vw, 1.55rem);
+      font-weight: 300;
+      color: rgba(245,238,216,0.7);
+      letter-spacing: 0.06em;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(14px);
+      animation: rise 1.2s cubic-bezier(0.22,1,0.36,1) 1s forwards;
+      margin-bottom: 5vh;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 5vh;
+      opacity: 0;
+      animation: fadeIn 1.2s ease 1.4s forwards;
+    }
+    .divider span { width: 60px; height: 1px; background: linear-gradient(to right, transparent, var(--gold)); }
+    .divider span:last-child { background: linear-gradient(to left, transparent, var(--gold)); }
+    .divider svg { width: 14px; height: 14px; fill: var(--gold); flex-shrink: 0; }
+
+    /* ── Coming soon badge ── */
+    .badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      opacity: 0;
+      transform: translateY(12px);
+      animation: rise 1.2s cubic-bezier(0.22,1,0.36,1) 1.6s forwards;
+    }
+
+    .coming-label {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(0.5rem, 1vw, 0.65rem);
+      letter-spacing: 0.5em;
+      color: var(--gold-dim);
+      text-transform: uppercase;
+    }
+
+    .quarter {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.4rem, 4vw, 3rem);
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      color: var(--gold);
+      animation: quarterGlow 3s ease-in-out 2.4s infinite;
+    }
+
+    @keyframes quarterGlow {
+      0%, 100% { text-shadow: 0 0 20px rgba(201,168,76,0.3); }
+      50%       { text-shadow: 0 0 40px rgba(201,168,76,0.7), 0 0 80px rgba(201,168,76,0.2); }
+    }
+
+    /* ── Language tag ── */
+    .lang-tag {
+      position: fixed;
+      bottom: 12vh;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      font-family: 'Cinzel', serif;
+      font-size: clamp(0.45rem, 0.9vw, 0.6rem);
+      letter-spacing: 0.4em;
+      color: var(--gold-dim);
+      text-transform: uppercase;
+      opacity: 0;
+      animation: fadeIn 1.5s ease 2.2s forwards;
+      z-index: 3;
+    }
+
+    .disclaimer {
+      position: fixed;
+      bottom: 4vh;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(0.45rem, 0.85vw, 0.58rem);
+      letter-spacing: 0.12em;
+      color: rgba(122, 94, 40, 0.7);
+      opacity: 0;
+      animation: fadeIn 1.5s ease 2.5s forwards;
+      z-index: 3;
+    }
+
+    /* ── Rise animation ── */
+    @keyframes rise {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Floating particles ── */
+    .particles {
+      position: fixed; inset: 0; z-index: 1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .particle {
+      position: absolute;
+      width: 2px; height: 2px;
+      border-radius: 50%;
+      background: var(--gold);
+      opacity: 0;
+      animation: float linear infinite;
+    }
+
+    @keyframes float {
+      0%   { transform: translateY(110vh) translateX(0); opacity: 0; }
+      10%  { opacity: 0.6; }
+      90%  { opacity: 0.3; }
+      100% { transform: translateY(-10vh) translateX(30px); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="glow"></div>
+
+  <div class="line-top"></div>
+  <div class="line-bottom"></div>
+
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
+
+  <div class="particles" id="particles"></div>
+
+  <main class="stage">
+    <p class="eyebrow">Sebuah Novel oleh Rayhan Wijaya</p>
+
+    <div class="title-wrap">
+      <h1 class="title" data-text="RADIANT VERDICT">RADIANT VERDICT</h1>
+    </div>
+
+    <p class="subtitle">"Dunia ini penuh cahaya. Begitu juga dirinya. Tapi tak ada yang tahu apa artinya — untuk sekarang."</p>
+
+    <div class="divider">
+      <span></span>
+      <svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+      <span></span>
+    </div>
+
+    <div class="badge">
+      <span class="coming-label">Segera Hadir</span>
+      <span class="quarter">Q2 · 2026</span>
+    </div>
+  </main>
+
+  <p class="lang-tag">Tersedia dalam Bahasa Indonesia &amp; Inggris</p>
+  <p class="disclaimer">* Diperkirakan rilis pada Q3–Q4 2026 jika terjadi kendala atau kualitasnya belum mencukupi.</p>
+
+  <script>
+    const container = document.getElementById('particles');
+    for (let i = 0; i < 28; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = Math.random() * 100 + 'vw';
+      p.style.animationDuration = (12 + Math.random() * 20) + 's';
+      p.style.animationDelay = (Math.random() * 16) + 's';
+      p.style.width = p.style.height = (1 + Math.random() * 2) + 'px';
+      p.style.opacity = (0.2 + Math.random() * 0.5).toString();
+      container.appendChild(p);
+    }
+  </script>
+</body>
+</html>
